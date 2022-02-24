@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Task } from './Task';
 import { TasksCollection } from '/imports/api/TasksCollection';
@@ -16,6 +16,8 @@ const deleteTask = ({ _id }) => TasksCollection.remove(_id);
 
 export const App = () => {
   const tasks = useTracker(() => TasksCollection.find({}, { sort: { createdAt: -1 } }).fetch());
+  const [hideCompleted, setHideCompleted] = useState(false);
+
 
   return (
     <div className="app">
@@ -29,6 +31,11 @@ export const App = () => {
 
       <div className="main">
         <TaskForm />
+        <div className="filter">
+          <button onClick={() => setHideCompleted(!hideCompleted)}>
+            {hideCompleted ? 'Show All' : 'Hide Completed'}
+          </button>
+        </div>
 
         <ul className="tasks">
           {tasks.map(task => (
