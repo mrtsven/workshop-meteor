@@ -3,6 +3,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { Task } from './Task';
 import { TasksCollection } from '/imports/api/TasksCollection';
 import { TaskForm } from './TaskForm';
+import { LoginForm } from './LoginForm';
 
 const toggleChecked = ({ _id, isChecked }) => {
   TasksCollection.update(_id, {
@@ -18,6 +19,7 @@ export const App = () => {
   const [hideCompleted, setHideCompleted] = useState(false);
   const hideCompletedFilter = { isChecked: { $ne: true } };
 
+  const user = useTracker(() => Meteor.user());
   const tasks = useTracker(() =>
     TasksCollection.find(hideCompleted ? hideCompletedFilter : {}, {
       sort: { createdAt: -1 },
@@ -42,23 +44,30 @@ export const App = () => {
       </header>
 
       <div className="main">
-        <TaskForm />
-        <div className="filter">
-          <button onClick={() => setHideCompleted(!hideCompleted)}>
-            {hideCompleted ? 'Show All' : 'Hide Completed'}
-          </button>
-        </div>
+        {user ? (
+          <Fragment>
+            <TaskForm />
 
-        <ul className="tasks">
-          {tasks.map(task => (
-            <Task
-              key={task._id}
-              task={task}
-              onCheckboxClick={toggleChecked}
-              onDeleteClick={deleteTask}
-            />
-          ))}
-        </ul>
+            <div className="filter">
+              <button onClick={() => setHideCompleted(!hideCompleted)}>
+                {hideCompleted ? 'Show All' : 'Hide Completed'}
+              </button>
+            </div>
+
+            <ul className="tasks">
+              {tasks.map(task => (
+                <Task
+                  key={task._id}
+                  task={task}
+                  onCheckboxClick={toggleChecked}
+                  onDeleteClick={deleteTask}
+                />
+              ))}
+            </ul>
+          </Fragment>
+        ) : (
+          <LoginForm />
+        )}
       </div>
     </div>
   );
