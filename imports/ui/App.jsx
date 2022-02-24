@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Task } from './Task';
 import { TasksCollection } from '/imports/api/TasksCollection';
@@ -17,18 +17,32 @@ const deleteTask = ({ _id }) => TasksCollection.remove(_id);
 
 export const App = () => {
   const [hideCompleted, setHideCompleted] = useState(false);
-  const hideCompletedFilter = { isChecked: { $ne: true } };
 
   const user = useTracker(() => Meteor.user());
-  const tasks = useTracker(() =>
-    TasksCollection.find(hideCompleted ? hideCompletedFilter : {}, {
-      sort: { createdAt: -1 },
-    }).fetch()
-  );
+  const hideCompletedFilter = { isChecked: { $ne: true } };
+  const userFilter = user ? { userId: user._id } : {};
+  const pendingOnlyFilter = { ...hideCompletedFilter, ...userFilter }
 
-  const pendingTasksCount = useTracker(() =>
-    TasksCollection.find(hideCompletedFilter).count()
-  );
+  const tasks = useTracker(() => {
+    if (!user) {
+      return [];
+    }
+
+    return TasksCollection.find(
+      hideCompleted ? pendingOnlyFilter : userFilter,
+      {
+        sort: { createdAt: -1 },
+      }
+    ).fetch();
+  });
+
+  const pendingTasksCount = useTracker(() => {
+    if (!user) {
+      return 0;
+    }
+
+    return TasksCollection.find(pendingOnlyFilter).count();
+  });
 
   const pendingTasksTitle = `${pendingTasksCount ? ` (${pendingTasksCount})` : ''}`;
 
@@ -46,7 +60,7 @@ export const App = () => {
       <div className="main">
         {user ? (
           <Fragment>
-            <TaskForm />
+            <TaskForm user={user} />
 
             <div className="filter">
               <button onClick={() => setHideCompleted(!hideCompleted)}>
